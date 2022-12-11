@@ -7,6 +7,8 @@
 #include "proc.h"
 #include "spinlock.h"
 
+#define STARVING_THRESHOLD 8000
+
 struct {
   struct spinlock lock;
   struct proc proc[NPROC];
@@ -320,15 +322,27 @@ wait(void)
 //  - eventually that process transfers control
 //      via swtch back to the scheduler.
 
-struct proc* round_robin(void) { // for queue 0
+void
+fix_priority(void) {
+    struct proc *p;
+    for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+        if (p->state == RUNNABLE)
+            if (ticks - p->enter >= STARVING_THRESHOLD) {
+                p->queue = 1;
+                p->entered_queue = ticks;
+            }
+    }
+}
+
+struct proc* round_robin(void) { // for queue 1 with highest priority
     struct proc *p;
     struct proc *min_p = 0;
     int time = ticks;
     int starvation_time = 0;
     for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-        if (p->state != RUNNABLE || p->queue != 0)
+        if (p->state != RUNNABLE || p->queue != 1)
             continue;
-        int starved_for = time - p->last_cpu_time;
+        int starved_for = time - p->entered_queue;
         if (starved_for > starvation_time) {
             starvation_time = starved_for;
             min_p = p;
