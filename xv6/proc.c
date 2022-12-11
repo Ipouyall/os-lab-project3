@@ -114,6 +114,9 @@ found:
   memset(p->context, 0, sizeof *p->context);
   p->context->eip = (uint)forkret;
 
+  p->entered_queue = ticks;
+  p->queue = 2;
+
   return p;
 }
 
@@ -323,7 +326,7 @@ wait(void)
 //      via swtch back to the scheduler.
 
 void
-fix_priority(void) {
+fix_queues(void) {
     struct proc *p;
     for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
         if (p->state == RUNNABLE)
@@ -363,6 +366,8 @@ scheduler(void) {
 
         // Loop over process table looking for process to run.
         acquire(&ptable.lock);
+
+        fix_queues();
 
         p = round_robin();
 
