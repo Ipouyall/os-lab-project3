@@ -319,6 +319,24 @@ wait(void)
 //  - swtch to start running that process
 //  - eventually that process transfers control
 //      via swtch back to the scheduler.
+
+struct proc* round_robin(void) { // for queue 0
+    struct proc *p;
+    struct proc *min_p = 0;
+    int time = ticks;
+    int starvation_time = 0;
+    for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+        if (p->state != RUNNABLE || p->queue != 0)
+            continue;
+        int starved_for = time - p->last_cpu_time;
+        if (starved_for > starvation_time) {
+            starvation_time = starved_for;
+            min_p = p;
+        }
+    }
+    return min_p;
+}
+
 void
 scheduler(void)
 {
