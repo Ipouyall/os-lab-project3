@@ -330,7 +330,7 @@ fix_queues(void) {
     struct proc *p;
     for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
         if (p->state == RUNNABLE)
-            if (ticks - p->enter >= STARVING_THRESHOLD) {
+            if (ticks - p->entered_queue >= STARVING_THRESHOLD) {
                 p->queue = 1;
                 p->entered_queue = ticks;
             }
