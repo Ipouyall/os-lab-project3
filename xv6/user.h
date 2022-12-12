@@ -27,6 +27,10 @@ int find_largest_prime_factor(void);
 int get_callers(int);
 int change_file_size(const char*, int);
 int get_parent_pid(void);
+void set_proc_queue(int, int);
+void set_lottery_params(int, int);
+void set_a_proc_bjf_params(int, int, int, int);
+void set_all_bjf_params(int, int, int);
 
 
 // ulib.c
