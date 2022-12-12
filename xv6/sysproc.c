@@ -116,3 +116,42 @@ sys_get_callers(void)
   cprintf("        now calling get_callers(%d)\n", number);
   get_callers(number);
 }
+
+void
+sys_set_proc_queue(void)
+{
+  int pid, queue;
+  argint(0, &pid);
+  argint(1, &queue);
+  set_queue(pid, queue);
+}
+
+void
+sys_set_lottery_params(void)
+{
+  int pid, ticket_chance;
+  argint(0, &pid);
+  argint(1, &ticket_chance);
+  set_lottery_params(pid, ticket_chance);
+}
+
+void
+sys_set_a_proc_bjf_params(void)
+{
+  int pid, priority_ratio, arrival_time_ratio, executed_cycle_ratio;
+  argint(0, &pid);
+  argint(1, &priority_ratio);
+  argint(2, &arrival_time_ratio);
+  argint(3, &executed_cycle_ratio);
+  set_a_proc_bjf_params(pid, priority_ratio, arrival_time_ratio, executed_cycle_ratio);
+}
+
+void
+sys_set_all_bjf_params(void)
+{
+  int priority_ratio, arrival_time_ratio, executed_cycle_ratio;
+  argint(0, &priority_ratio);
+  argint(1, &arrival_time_ratio);
+  argint(2, &executed_cycle_ratio);
+  set_all_bjf_params(priority_ratio, arrival_time_ratio, executed_cycle_ratio);
+}

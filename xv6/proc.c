@@ -694,3 +694,62 @@ get_callers(int syscall_number)
     
 }
 
+void
+set_proc_queue(int pid, int queue)
+{
+  struct proc *p;
+
+  acquire(&ptable.lock);
+  for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+  {
+    if (p->pid == pid)
+      p->queue = queue;
+  }
+  release(&ptable.lock);
+}
+
+void
+set_lottery_params(int pid, int ticket_chance){
+  struct proc *p;
+
+  acquire(&ptable.lock);
+  for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+  {
+    if (p->pid == pid)
+      p->tickets = ticket_chance;
+  }
+  release(&ptable.lock); 
+}
+
+void
+set_a_proc_bjf_params(int pid, int priority_ratio, int arrival_time_ratio, int executed_cycle_ratio)
+{
+  struct proc *p;
+
+  acquire(&ptable.lock);
+  for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+  {
+    if (p->pid == pid)
+    {
+      p->priority_ratio = priority_ratio;
+      p->arrival_time_ratio = arrival_time_ratio;
+      p->executed_cycle_ratio = executed_cycle_ratio; 
+    }
+  }
+  release(&ptable.lock); 
+}
+
+void
+set_all_bjf_params(int priority_ratio, int arrival_time_ratio, int executed_cycle_ratio)
+{
+  struct proc *p;
+
+  acquire(&ptable.lock);
+  for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+  {
+      p->priority_ratio = priority_ratio;
+      p->arrival_time_ratio = arrival_time_ratio;
+      p->executed_cycle_ratio = executed_cycle_ratio; 
+  }
+  release(&ptable.lock); 
+}
