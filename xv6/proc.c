@@ -7,7 +7,7 @@
 #include "proc.h"
 #include "spinlock.h"
 
-#define STARVING_THRESHOLD 100
+#define STARVING_THRESHOLD 8000
 #define DEFAULT_MAX_TICKETS 10
 
 struct {
@@ -26,11 +26,12 @@ static void wakeup1(void *chan);
 int
 generate_random_number(int min, int max)
 {
-    if (min == max)
-        return min;
+    if (min >= max)
+        return max;
     int rand_num;
     acquire(&tickslock);
     rand_num = (ticks + 2) * (ticks + 1) * (2 * ticks + 3) * 1348;
+    cprintf("%d\n", rand_num);
     release(&tickslock);
     rand_num = rand_num % (max - min + 1) + min;
     return rand_num;
@@ -386,7 +387,6 @@ struct proc* lottery(void) { // for queue #2 and entrance queue
             return p;
     }
     return 0;
-
 }
 
 void
