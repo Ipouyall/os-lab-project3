@@ -8,6 +8,7 @@
 #include "spinlock.h"
 
 #define STARVING_THRESHOLD 8000
+#define DEFAULT_MAX_TICKETS 10
 
 struct {
   struct spinlock lock;
@@ -21,6 +22,19 @@ extern void forkret(void);
 extern void trapret(void);
 
 static void wakeup1(void *chan);
+
+int
+generate_random_number(int min, int max)
+{
+    if (min >= max)
+        return max;
+    int rand_num;
+    acquire(&tickslock);
+    rand_num = (ticks + 2) * (ticks + 1) * (2 * ticks + 3) * 1348 * (ticks % max);
+    release(&tickslock);
+    rand_num = rand_num % (max - min + 1) + min;
+    return rand_num;
+}
 
 void
 pinit(void)
@@ -116,6 +130,7 @@ found:
 
   p->entered_queue = ticks;
   p->queue = 2;
+  p->tickets = generate_random_number(1, DEFAULT_MAX_TICKETS);
 
   return p;
 }
@@ -354,6 +369,25 @@ struct proc* round_robin(void) { // for queue 1 with the highest priority
     return min_p;
 }
 
+struct proc* lottery(void) { // for queue #2 and entrance queue
+    struct proc *p;
+    int total_tickets = 0;
+    for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+        if (p->state != RUNNABLE || p->queue != 2)
+            continue;
+        total_tickets += p->tickets;
+    }
+    int winning_ticket = generate_random_number(1, total_tickets);
+    for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+        if (p->state != RUNNABLE || p->queue != 2)
+            continue;
+        winning_ticket -= p->tickets;
+        if (winning_ticket <= 0)
+            return p;
+    }
+    return 0;
+}
+
 void
 scheduler(void) {
     struct proc *p;
@@ -370,6 +404,9 @@ scheduler(void) {
         fix_queues();
 
         p = round_robin();
+
+        if (p == 0)
+            p = lottery();
 
         if (p == 0) {
             release(&ptable.lock);
@@ -650,4 +687,3 @@ get_callers(int syscall_number)
     }
     
 }
-
