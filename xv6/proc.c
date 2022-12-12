@@ -673,7 +673,7 @@ set_lottery_params(int pid, int ticket_chance){
   for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
   {
     if (p->pid == pid)
-      p->ticket_chance = ticket_chance;
+      p->tickets = ticket_chance;
   }
   release(&ptable.lock); 
 }

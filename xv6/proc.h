@@ -51,7 +51,7 @@ struct proc {
   char name[16];               // Process name (debugging)
   int queue;               // queue number
   int entered_queue;           // time entered queue
-  int ticket_chance;
+  int tickets;
   int priority_ratio;         
   int arrival_time_ratio;
   int executed_cycle_ratio;
