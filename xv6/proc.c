@@ -408,20 +408,6 @@ bjf(void)
   return min_p;
 }
 
-void
-scheduler(void) {
-    struct proc *p;
-    struct cpu *c = mycpu();
-    c->proc = 0;
-
-    for (;;) {
-        // Enable interrupts on this processor.
-        sti();
-
-        // Loop over process table looking for process to run.
-        acquire(&ptable.lock);
-
-
 struct proc* lottery(void) { // for queue #2 and entrance queue
     struct proc *p;
     int total_tickets = 0;
@@ -453,17 +439,12 @@ scheduler(void) {
 
         // Loop over process table looking for process to run.
         acquire(&ptable.lock);
-
         fix_queues();
-
         p = round_robin();
-        
         if (p == 0)
             p = lottery();
-
-        if (p == 0) 
+        if (p == 0)
             p = bjf();
-
         if (p == 0) {
             release(&ptable.lock);
             continue;
@@ -484,7 +465,6 @@ scheduler(void) {
         // It should have changed its p->state before coming back.
         c->proc = 0;
         release(&ptable.lock);
-
     }
 }
 
@@ -589,13 +569,12 @@ sleep(void *chan, struct spinlock *lk)
 // Wake up all processes sleeping on chan.
 // The ptable lock must be held.
 static void
-wakeup1(void *chan)
-{
-  struct proc *p;
+wakeup1(void *chan) {
+    struct proc *p;
 
-  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
-    if(p->state == SLEEPING && p->chan == chan)
-      p->state = RUNNABLE;
+    for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+        if (p->state == SLEEPING && p->chan == chan)
+            p->state = RUNNABLE;
 }
 
 // Wake up all processes sleeping on chan.
@@ -791,16 +770,14 @@ set_a_proc_bjf_params(int pid, int priority_ratio, int arrival_time_ratio, int e
 }
 
 void
-set_all_bjf_params(int priority_ratio, int arrival_time_ratio, int executed_cycle_ratio)
-{
-  struct proc *p;
+set_all_bjf_params(int priority_ratio, int arrival_time_ratio, int executed_cycle_ratio) {
+    struct proc *p;
 
-  acquire(&ptable.lock);
-  for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
-  {
-      p->priority_ratio = priority_ratio;
-      p->arrival_time_ratio = arrival_time_ratio;
-      p->executed_cycle_ratio = executed_cycle_ratio; 
-  }
-  release(&ptable.lock); 
+    acquire(&ptable.lock);
+    for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+        p->priority_ratio = priority_ratio;
+        p->arrival_time_ratio = arrival_time_ratio;
+        p->executed_cycle_ratio = executed_cycle_ratio;
+    }
+    release(&ptable.lock);
 }

@@ -123,7 +123,7 @@ sys_set_proc_queue(void)
   int pid, queue;
   argint(0, &pid);
   argint(1, &queue);
-  set_queue(pid, queue);
+  set_proc_queue(pid, queue);
 }
 
 void
