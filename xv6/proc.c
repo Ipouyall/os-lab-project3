@@ -9,6 +9,7 @@
 
 #define STARVING_THRESHOLD 8000
 #define MIN_BJF_RANK 1000000
+#define DEFAULT_MAX_TICKETS 10
 
 struct {
   struct spinlock lock;
@@ -22,6 +23,19 @@ extern void forkret(void);
 extern void trapret(void);
 
 static void wakeup1(void *chan);
+
+int
+generate_random_number(int min, int max)
+{
+    if (min >= max)
+        return max;
+    int rand_num;
+    acquire(&tickslock);
+    rand_num = (ticks + 2) * (ticks + 1) * (2 * ticks + 3) * 1348 * (ticks % max);
+    release(&tickslock);
+    rand_num = rand_num % (max - min + 1) + min;
+    return rand_num;
+}
 
 void
 pinit(void)
@@ -122,6 +136,7 @@ found:
   p->arrival_time_ratio = 1;
   p->executed_cycle_ratio = 1;
   p->priority = 1;
+  p->tickets = generate_random_number(1, DEFAULT_MAX_TICKETS);
 
   return p;
 }
@@ -343,15 +358,16 @@ fix_queues(void) {
     }
 }
 
-struct proc*
-round_robin(void) 
-{ // for queue 1 with the highest priority
+
+struct proc* round_robin(void) { // for queue 1 with the highest priority
     struct proc *p;
     struct proc *min_p = 0;
     int time = ticks;
     int starvation_time = 0;
     for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-
+        if (p->state != RUNNABLE || p->queue != 1)
+            continue;
+            
         if (p->state != RUNNABLE || p->queue != 1)
             continue;
 
@@ -405,13 +421,48 @@ scheduler(void) {
         // Loop over process table looking for process to run.
         acquire(&ptable.lock);
 
+
+struct proc* lottery(void) { // for queue #2 and entrance queue
+    struct proc *p;
+    int total_tickets = 0;
+    for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+        if (p->state != RUNNABLE || p->queue != 2)
+            continue;
+        total_tickets += p->tickets;
+    }
+    int winning_ticket = generate_random_number(1, total_tickets);
+    for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+        if (p->state != RUNNABLE || p->queue != 2)
+            continue;
+        winning_ticket -= p->tickets;
+        if (winning_ticket <= 0)
+            return p;
+    }
+    return 0;
+}
+
+void
+scheduler(void) {
+    struct proc *p;
+    struct cpu *c = mycpu();
+    c->proc = 0;
+
+    for (;;) {
+        // Enable interrupts on this processor.
+        sti();
+
+        // Loop over process table looking for process to run.
+        acquire(&ptable.lock);
+
         fix_queues();
 
         p = round_robin();
+        
+        if (p == 0)
+            p = lottery();
 
-        if (p == 0) {
-          p = bjf();
-        }
+        if (p == 0) 
+            p = bjf();
 
         if (p == 0) {
             release(&ptable.lock);
