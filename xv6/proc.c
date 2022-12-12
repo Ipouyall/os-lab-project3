@@ -7,6 +7,8 @@
 #include "proc.h"
 #include "spinlock.h"
 
+#define STARVING_THRESHOLD 8000
+
 struct {
   struct spinlock lock;
   struct proc proc[NPROC];
@@ -111,6 +113,9 @@ found:
   p->context = (struct context*)sp;
   memset(p->context, 0, sizeof *p->context);
   p->context->eip = (uint)forkret;
+
+  p->entered_queue = ticks;
+  p->queue = 2;
 
   return p;
 }
@@ -319,40 +324,75 @@ wait(void)
 //  - swtch to start running that process
 //  - eventually that process transfers control
 //      via swtch back to the scheduler.
+
 void
-scheduler(void)
-{
-  struct proc *p;
-  struct cpu *c = mycpu();
-  c->proc = 0;
-  
-  for(;;){
-    // Enable interrupts on this processor.
-    sti();
-
-    // Loop over process table looking for process to run.
-    acquire(&ptable.lock);
-    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-      if(p->state != RUNNABLE)
-        continue;
-
-      // Switch to chosen process.  It is the process's job
-      // to release ptable.lock and then reacquire it
-      // before jumping back to us.
-      c->proc = p;
-      switchuvm(p);
-      p->state = RUNNING;
-
-      swtch(&(c->scheduler), p->context);
-      switchkvm();
-
-      // Process is done running for now.
-      // It should have changed its p->state before coming back.
-      c->proc = 0;
+fix_queues(void) {
+    struct proc *p;
+    for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+        if (p->state == RUNNABLE)
+            if (ticks - p->entered_queue >= STARVING_THRESHOLD) {
+                p->queue = 1;
+                p->entered_queue = ticks;
+            }
     }
-    release(&ptable.lock);
+}
 
-  }
+struct proc* round_robin(void) { // for queue 1 with the highest priority
+    struct proc *p;
+    struct proc *min_p = 0;
+    int time = ticks;
+    int starvation_time = 0;
+    for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+        if (p->state != RUNNABLE || p->queue != 1)
+            continue;
+        int starved_for = time - p->entered_queue;
+        if (starved_for > starvation_time) {
+            starvation_time = starved_for;
+            min_p = p;
+        }
+    }
+    return min_p;
+}
+
+void
+scheduler(void) {
+    struct proc *p;
+    struct cpu *c = mycpu();
+    c->proc = 0;
+
+    for (;;) {
+        // Enable interrupts on this processor.
+        sti();
+
+        // Loop over process table looking for process to run.
+        acquire(&ptable.lock);
+
+        fix_queues();
+
+        p = round_robin();
+
+        if (p == 0) {
+            release(&ptable.lock);
+            continue;
+        }
+        p->entered_queue = ticks;
+
+        // Switch to chosen process.  It is the process's job
+        // to release ptable.lock and then reacquire it
+        // before jumping back to us.
+        c->proc = p;
+        switchuvm(p);
+        p->state = RUNNING;
+
+        swtch(&(c->scheduler), p->context);
+        switchkvm();
+
+        // Process is done running for now.
+        // It should have changed its p->state before coming back.
+        c->proc = 0;
+        release(&ptable.lock);
+
+    }
 }
 
 // Enter scheduler.  Must hold only ptable.lock
