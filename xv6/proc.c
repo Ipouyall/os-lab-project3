@@ -30,8 +30,7 @@ generate_random_number(int min, int max)
         return max;
     int rand_num;
     acquire(&tickslock);
-    rand_num = (ticks + 2) * (ticks + 1) * (2 * ticks + 3) * 1348;
-    cprintf("%d\n", rand_num);
+    rand_num = (ticks + 2) * (ticks + 1) * (2 * ticks + 3) * 1348 * (ticks % max);
     release(&tickslock);
     rand_num = rand_num % (max - min + 1) + min;
     return rand_num;
