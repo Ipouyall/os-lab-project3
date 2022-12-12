@@ -1,4 +1,4 @@
-#define MAX_COMMAND_NUM 15
+#define MAX_COMMAND_NUM 30
 extern int command_num ,size_command ;
 extern char command[MAX_COMMAND_NUM][128];
 
