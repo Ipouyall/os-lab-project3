@@ -51,6 +51,11 @@ struct proc {
   char name[16];               // Process name (debugging)
   int queue;               // queue number
   int entered_queue;           // time entered queue
+  float executed_cycle;
+  int priority_ratio;
+  int arrival_time_ratio;
+  int executed_cycle_ratio;
+  int priority;
 };
 
 // Process memory is laid out contiguously, low addresses first:

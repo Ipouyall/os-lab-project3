@@ -8,6 +8,7 @@
 #include "spinlock.h"
 
 #define STARVING_THRESHOLD 8000
+#define MIN_BJF_RANK 1000000
 
 struct {
   struct spinlock lock;
@@ -116,6 +117,11 @@ found:
 
   p->entered_queue = ticks;
   p->queue = 2;
+  p->executed_cycle = 0;
+  p->priority_ratio = 1;
+  p->arrival_time_ratio = 1;
+  p->executed_cycle_ratio = 1;
+  p->priority = 1;
 
   return p;
 }
@@ -337,14 +343,18 @@ fix_queues(void) {
     }
 }
 
-struct proc* round_robin(void) { // for queue 1 with the highest priority
+struct proc*
+round_robin(void) 
+{ // for queue 1 with the highest priority
     struct proc *p;
     struct proc *min_p = 0;
     int time = ticks;
     int starvation_time = 0;
     for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+
         if (p->state != RUNNABLE || p->queue != 1)
             continue;
+
         int starved_for = time - p->entered_queue;
         if (starved_for > starvation_time) {
             starvation_time = starved_for;
@@ -352,6 +362,34 @@ struct proc* round_robin(void) { // for queue 1 with the highest priority
         }
     }
     return min_p;
+}
+
+float
+get_rank(struct proc* p)
+{
+  return 
+    p->priority * p->priority_ratio
+    + p->entered_queue * p->arrival_time_ratio
+    + p->executed_cycle * p->executed_cycle_ratio;
+}
+
+struct proc*
+bjf(void)
+{
+  struct proc* p;
+  struct proc* min_p = 0;
+  float min_rank = MIN_BJF_RANK;
+
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){ 
+    if (p->state != RUNNABLE || p->queue != 3)
+      continue;
+    if (get_rank(p) < min_rank){
+      min_p = p;
+      min_rank = get_rank(p);
+    }
+  }
+
+  return min_p;
 }
 
 void
@@ -370,6 +408,10 @@ scheduler(void) {
         fix_queues();
 
         p = round_robin();
+
+        if (p == 0) {
+          p = bjf();
+        }
 
         if (p == 0) {
             release(&ptable.lock);
@@ -427,6 +469,7 @@ yield(void)
 {
   acquire(&ptable.lock);  //DOC: yieldlock
   myproc()->state = RUNNABLE;
+  myproc()->executed_cycle += 0.1;
   sched();
   release(&ptable.lock);
 }
