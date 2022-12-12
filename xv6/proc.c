@@ -354,6 +354,26 @@ struct proc* round_robin(void) { // for queue 1 with the highest priority
     return min_p;
 }
 
+struct proc* lottery(void) { // for queue #2 and entrance queue
+    struct proc *p;
+    int total_tickets = 0;
+    for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+        if (p->state != RUNNABLE || p->queue != 2)
+            continue;
+        total_tickets += p->tickets;
+    }
+    int winning_ticket = generate_random_number(1, total_tickets);
+    for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+        if (p->state != RUNNABLE || p->queue != 2)
+            continue;
+        winning_ticket -= p->tickets;
+        if (winning_ticket <= 0)
+            return p;
+    }
+    return 0;
+
+}
+
 void
 scheduler(void) {
     struct proc *p;
@@ -370,6 +390,9 @@ scheduler(void) {
         fix_queues();
 
         p = round_robin();
+
+        if (p == 0)
+            p = lottery();
 
         if (p == 0) {
             release(&ptable.lock);
