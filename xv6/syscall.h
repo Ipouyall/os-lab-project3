@@ -24,3 +24,7 @@
 #define SYS_get_callers                23 
 #define SYS_change_file_size           24
 #define SYS_get_parent_pid             25
+#define SYS_set_proc_queue             26 
+#define SYS_set_lottery_params         27
+#define SYS_set_a_proc_bjf_params      28
+#define SYS_set_all_bjf_params         29

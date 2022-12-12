@@ -125,6 +125,10 @@ int             find_largest_prime_factor(int);
 int             get_parent_pid();
 void            push_pid_in_stack(int,int);
 void            get_callers(int);
+void            set_proc_queue(int, int);
+void			set_lottery_params(int, int);
+void            set_a_proc_bjf_params(int, int, int, int);
+void            set_all_bjf_params(int, int, int);
 
 
 // swtch.S

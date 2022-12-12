@@ -8,6 +8,7 @@
 #include "spinlock.h"
 
 #define STARVING_THRESHOLD 8000
+#define MIN_BJF_RANK 1000000
 #define DEFAULT_MAX_TICKETS 10
 
 struct {
@@ -130,6 +131,11 @@ found:
 
   p->entered_queue = ticks;
   p->queue = 2;
+  p->executed_cycle = 0;
+  p->priority_ratio = 1;
+  p->arrival_time_ratio = 1;
+  p->executed_cycle_ratio = 1;
+  p->priority = 1;
   p->tickets = generate_random_number(1, DEFAULT_MAX_TICKETS);
 
   return p;
@@ -352,6 +358,7 @@ fix_queues(void) {
     }
 }
 
+
 struct proc* round_robin(void) { // for queue 1 with the highest priority
     struct proc *p;
     struct proc *min_p = 0;
@@ -360,6 +367,10 @@ struct proc* round_robin(void) { // for queue 1 with the highest priority
     for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
         if (p->state != RUNNABLE || p->queue != 1)
             continue;
+            
+        if (p->state != RUNNABLE || p->queue != 1)
+            continue;
+
         int starved_for = time - p->entered_queue;
         if (starved_for > starvation_time) {
             starvation_time = starved_for;
@@ -368,6 +379,48 @@ struct proc* round_robin(void) { // for queue 1 with the highest priority
     }
     return min_p;
 }
+
+float
+get_rank(struct proc* p)
+{
+  return 
+    p->priority * p->priority_ratio
+    + p->entered_queue * p->arrival_time_ratio
+    + p->executed_cycle * p->executed_cycle_ratio;
+}
+
+struct proc*
+bjf(void)
+{
+  struct proc* p;
+  struct proc* min_p = 0;
+  float min_rank = MIN_BJF_RANK;
+
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){ 
+    if (p->state != RUNNABLE || p->queue != 3)
+      continue;
+    if (get_rank(p) < min_rank){
+      min_p = p;
+      min_rank = get_rank(p);
+    }
+  }
+
+  return min_p;
+}
+
+void
+scheduler(void) {
+    struct proc *p;
+    struct cpu *c = mycpu();
+    c->proc = 0;
+
+    for (;;) {
+        // Enable interrupts on this processor.
+        sti();
+
+        // Loop over process table looking for process to run.
+        acquire(&ptable.lock);
+
 
 struct proc* lottery(void) { // for queue #2 and entrance queue
     struct proc *p;
@@ -404,9 +457,12 @@ scheduler(void) {
         fix_queues();
 
         p = round_robin();
-
+        
         if (p == 0)
             p = lottery();
+
+        if (p == 0) 
+            p = bjf();
 
         if (p == 0) {
             release(&ptable.lock);
@@ -464,6 +520,7 @@ yield(void)
 {
   acquire(&ptable.lock);  //DOC: yieldlock
   myproc()->state = RUNNABLE;
+  myproc()->executed_cycle += 0.1;
   sched();
   release(&ptable.lock);
 }
@@ -686,4 +743,64 @@ get_callers(int syscall_number)
                            syscalls_order_pid_stack[syscall_number][i]);
     }
     
+}
+
+void
+set_proc_queue(int pid, int queue)
+{
+  struct proc *p;
+
+  acquire(&ptable.lock);
+  for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+  {
+    if (p->pid == pid)
+      p->queue = queue;
+  }
+  release(&ptable.lock);
+}
+
+void
+set_lottery_params(int pid, int ticket_chance){
+  struct proc *p;
+
+  acquire(&ptable.lock);
+  for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+  {
+    if (p->pid == pid)
+      p->tickets = ticket_chance;
+  }
+  release(&ptable.lock); 
+}
+
+void
+set_a_proc_bjf_params(int pid, int priority_ratio, int arrival_time_ratio, int executed_cycle_ratio)
+{
+  struct proc *p;
+
+  acquire(&ptable.lock);
+  for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+  {
+    if (p->pid == pid)
+    {
+      p->priority_ratio = priority_ratio;
+      p->arrival_time_ratio = arrival_time_ratio;
+      p->executed_cycle_ratio = executed_cycle_ratio; 
+    }
+  }
+  release(&ptable.lock); 
+}
+
+void
+set_all_bjf_params(int priority_ratio, int arrival_time_ratio, int executed_cycle_ratio)
+{
+  struct proc *p;
+
+  acquire(&ptable.lock);
+  for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+  {
+      p->priority_ratio = priority_ratio;
+      p->arrival_time_ratio = arrival_time_ratio;
+      p->executed_cycle_ratio = executed_cycle_ratio; 
+  }
+  release(&ptable.lock); 
 }
