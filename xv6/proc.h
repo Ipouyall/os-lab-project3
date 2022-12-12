@@ -63,3 +63,6 @@ struct proc {
 #define MAX_PID_NUM_SAVED 1000
 #define MAX_PID_TRACED 1000
 #define MAX_PID_OUTPUT_IN_ONE_LINE 11
+
+int generate_random_number(int min, int max);
+#define DEFAULT_MAX_TICKETS 10

@@ -651,3 +651,16 @@ get_callers(int syscall_number)
     
 }
 
+int
+generate_random_number(int min, int max)
+{
+    if (min == max)
+        return min;
+    int rand_num;
+    acquire(&tickslock);
+    rand_num = (ticks + 2) * (ticks + 1) * (2 * ticks + 3) * 1348;
+    release(&tickslock);
+    rand_num = rand_num % (max - min + 1) + min;
+    return rand_num;
+}
+
