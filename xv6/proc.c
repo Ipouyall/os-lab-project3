@@ -7,7 +7,8 @@
 #include "proc.h"
 #include "spinlock.h"
 
-#define STARVING_THRESHOLD 8000
+#define STARVING_THRESHOLD 100
+#define DEFAULT_MAX_TICKETS 10
 
 struct {
   struct spinlock lock;
@@ -21,6 +22,19 @@ extern void forkret(void);
 extern void trapret(void);
 
 static void wakeup1(void *chan);
+
+int
+generate_random_number(int min, int max)
+{
+    if (min == max)
+        return min;
+    int rand_num;
+    acquire(&tickslock);
+    rand_num = (ticks + 2) * (ticks + 1) * (2 * ticks + 3) * 1348;
+    release(&tickslock);
+    rand_num = rand_num % (max - min + 1) + min;
+    return rand_num;
+}
 
 void
 pinit(void)
@@ -116,6 +130,7 @@ found:
 
   p->entered_queue = ticks;
   p->queue = 2;
+  p->tickets = generate_random_number(1, DEFAULT_MAX_TICKETS);
 
   return p;
 }
@@ -673,17 +688,3 @@ get_callers(int syscall_number)
     }
     
 }
-
-int
-generate_random_number(int min, int max)
-{
-    if (min == max)
-        return min;
-    int rand_num;
-    acquire(&tickslock);
-    rand_num = (ticks + 2) * (ticks + 1) * (2 * ticks + 3) * 1348;
-    release(&tickslock);
-    rand_num = rand_num % (max - min + 1) + min;
-    return rand_num;
-}
-
