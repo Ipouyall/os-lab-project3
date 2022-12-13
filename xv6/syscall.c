@@ -111,6 +111,7 @@ extern int sys_set_proc_queue(void);
 extern int sys_set_lottery_params(void);
 extern int sys_set_a_proc_bjf_params(void);
 extern int sys_set_all_bjf_params(void);
+extern int sys_print_all_procs(void);
 
 
 static int (*syscalls[])(void) = {
@@ -143,6 +144,7 @@ static int (*syscalls[])(void) = {
 [SYS_set_lottery_params]        sys_set_lottery_params,
 [SYS_set_a_proc_bjf_params]     sys_set_a_proc_bjf_params,
 [SYS_set_all_bjf_params]        sys_set_all_bjf_params,
+[SYS_print_all_procs]           sys_print_all_procs,
 };
 
 void

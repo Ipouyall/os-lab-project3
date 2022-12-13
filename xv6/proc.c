@@ -781,3 +781,119 @@ set_all_bjf_params(int priority_ratio, int arrival_time_ratio, int executed_cycl
     }
     release(&ptable.lock);
 }
+
+
+void
+printfloat(float num){
+  int beg=(int)(num);
+	int fin=(int)(num*100)-beg*100;
+  cprintf("%d", beg);
+  cprintf(".");
+	if(fin<10)
+    cprintf("0");
+	cprintf("%d", fin);
+}
+
+void 
+print_all_procs()
+{
+    struct proc *p;
+
+    cprintf("name");
+    cprintf(" | ");
+    
+    cprintf("pid");
+    cprintf(" | ");
+
+    cprintf("state");
+    cprintf(" | ");
+
+    cprintf("queue");
+    cprintf(" | ");
+    
+    cprintf("arrival_time");
+    cprintf(" | ");
+
+    cprintf("tickets");
+    cprintf(" | ");
+
+    cprintf("priority_ratio");
+    cprintf(" | ");
+
+    cprintf("rank");
+    cprintf(" | ");
+
+    cprintf("exec_cycle");
+
+    cprintf("\n");
+
+    cprintf(".................................................................\n");
+
+
+
+    acquire(&ptable.lock);
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){ 
+      if (p->state == UNUSED)
+        continue;
+
+
+    cprintf(p->name);
+    cprintf(" | ");
+
+    cprintf("%d", p->pid);
+    cprintf(" | ");  
+
+    if (p->state == 0) {
+      cprintf("UNUSED");
+    }
+    else if (p->state == 1) {
+      cprintf("EMBRYO");
+    }
+    else if (p->state == 2) {
+      cprintf("SLEEPING");
+    }
+    else if (p->state == 3) {
+      cprintf("RUNNABLE");
+    }
+    else if (p->state == 4) {
+      cprintf("RUNNING");
+    }
+    else if (p->state == 5) {
+      cprintf("ZOMBIE");
+    }
+    else {
+      cprintf("");
+    }
+    cprintf(" | ");
+
+    if (p->queue == 1)
+      cprintf("RoundRobin");
+    else if (p->queue == 2)
+      cprintf("Lottery");
+    else if (p->queue == 3)
+      cprintf("BJF");
+    cprintf(" | ");
+
+    cprintf("%d", p->entered_queue);
+    cprintf(" | ");
+
+    cprintf("%d", p->tickets);
+    cprintf(" | ");
+
+    cprintf("%d", p->priority_ratio);
+    cprintf(" | ");
+
+    printfloat(get_rank(p));
+    cprintf(" | ");
+
+    float executed_cycle = p->executed_cycle*10;
+    if(executed_cycle - (int)(executed_cycle) <= 0.5)
+      cprintf("%d", (int)(executed_cycle));
+    else
+      cprintf("%d", (int)(executed_cycle)+1);
+
+    cprintf("\n");
+  }
+  release(&ptable.lock);
+  
+}
