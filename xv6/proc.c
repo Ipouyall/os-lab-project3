@@ -793,44 +793,24 @@ printfloat(float num){
     cprintf("0");
 	cprintf("%d", fin);
 }
-
+int 
+get_lenght(int num)
+{
+  int len = 0;
+  if(num == 0)
+    return 1;
+  while(num > 0){
+    num /= 10;
+    len++;
+  }
+  return len;
+}
 void 
 print_all_procs()
 {
     struct proc *p;
-
-    cprintf("name");
-    cprintf(" | ");
-    
-    cprintf("pid");
-    cprintf(" | ");
-
-    cprintf("state");
-    cprintf(" | ");
-
-    cprintf("queue");
-    cprintf(" | ");
-    
-    cprintf("arrival_time");
-    cprintf(" | ");
-
-    cprintf("tickets");
-    cprintf(" | ");
-
-    cprintf("priority_ratio");
-    cprintf(" | ");
-
-    cprintf("rank");
-    cprintf(" | ");
-
-    cprintf("exec_cycle");
-
-    cprintf("\n");
-
-    cprintf(".................................................................\n");
-
-
-
+    cprintf("name       pid       state       queue       arrival_time        tickets     priority_ratio     rank       exec_cycle\n");
+    cprintf(".....................................................................................................................\n");
     acquire(&ptable.lock);
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){ 
       if (p->state == UNUSED)
@@ -838,53 +818,53 @@ print_all_procs()
 
 
     cprintf(p->name);
-    cprintf(" | ");
+    for(int i = 0; i < 11 - strlen(p->name); i++) cprintf(" ");
 
     cprintf("%d", p->pid);
-    cprintf(" | ");  
+    for(int i = 0; i < 10 - get_lenght(p->pid); i++) cprintf(" ");  
 
-    if (p->state == 0) {
-      cprintf("UNUSED");
-    }
-    else if (p->state == 1) {
-      cprintf("EMBRYO");
-    }
-    else if (p->state == 2) {
-      cprintf("SLEEPING");
-    }
-    else if (p->state == 3) {
-      cprintf("RUNNABLE");
-    }
-    else if (p->state == 4) {
-      cprintf("RUNNING");
-    }
-    else if (p->state == 5) {
-      cprintf("ZOMBIE");
-    }
-    else {
-      cprintf("");
-    }
-    cprintf(" | ");
+    char* state;
+    if (p->state == 0)
+      state="UNUSED";
+    else if (p->state == 1)
+      state="EMBRYO";
+    else if (p->state == 2)
+      state="SLEEPING";
+    else if (p->state == 3)
+      state="RUNNABLE";
+    else if (p->state == 4)
+      state="RUNNING";
+    else if (p->state == 5)
+      state="ZOMBIE";
+    cprintf(state);
+    for(int i = 0; i < 12 - strlen(state); i++) cprintf(" ");
 
+    char* queue;
     if (p->queue == 1)
-      cprintf("RoundRobin");
+      queue="RoundRobin";
     else if (p->queue == 2)
-      cprintf("Lottery");
+      queue="Lottery";
     else if (p->queue == 3)
-      cprintf("BJF");
-    cprintf(" | ");
+      queue="BJF";
+    cprintf(queue);
+    for(int i = 0; i < 12 - strlen(queue); i++) cprintf(" ");  
 
     cprintf("%d", p->entered_queue);
-    cprintf(" | ");
+    for(int i = 0; i < 20 - get_lenght(p->entered_queue); i++) cprintf(" ");  
 
+    int tickets = p->tickets;
+    if(tickets<0)
+      tickets=-1*tickets + 1;
     cprintf("%d", p->tickets);
-    cprintf(" | ");
+    for(int i = 0; i < 12 - get_lenght(tickets); i++) cprintf(" ");  
+
 
     cprintf("%d", p->priority_ratio);
-    cprintf(" | ");
+    for(int i = 0; i < 19 - get_lenght(p->priority_ratio); i++) cprintf(" ");  
+
 
     printfloat(get_rank(p));
-    cprintf(" | ");
+    for(int i = 0; i < 11 - get_lenght((int)get_rank(p))-2; i++) cprintf(" ");  
 
     float executed_cycle = p->executed_cycle*10;
     if(executed_cycle - (int)(executed_cycle) <= 0.5)
