@@ -9,7 +9,7 @@
 
 #define STARVING_THRESHOLD 8000
 #define MIN_BJF_RANK 1000000
-#define DEFAULT_MAX_TICKETS 10
+#define DEFAULT_MAX_TICKETS 30
 
 struct {
   struct spinlock lock;
@@ -28,11 +28,11 @@ int
 generate_random_number(int min, int max)
 {
     if (min >= max)
-        return max;
-    int rand_num;
+        return max > 0 ? max : -1 * max;
     acquire(&tickslock);
-    rand_num = (ticks + 2) * (ticks + 1) * (2 * ticks + 3) * 1348 * (ticks % max);
+    int rand_num, diff = max - min + 1, time = ticks;
     release(&tickslock);
+    rand_num = (1 + (1 + ((time + 2) % diff ) * (time + 1) * 132) % diff) * (1 + time % max) * (1 + 2 * max % diff);
     rand_num = rand_num % (max - min + 1) + min;
     return rand_num;
 }
