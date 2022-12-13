@@ -853,10 +853,12 @@ print_all_procs()
     for(int i = 0; i < 20 - get_lenght(p->entered_queue); i++) cprintf(" ");  
 
     int tickets = p->tickets;
-    if(tickets<0)
-      tickets=-1*tickets + 1;
     cprintf("%d", p->tickets);
-    for(int i = 0; i < 12 - get_lenght(tickets); i++) cprintf(" ");  
+    if(tickets < 0)
+      for(int i = 0; i < 12 - get_lenght(tickets*(-1)) - 1; i++) cprintf(" ");
+    else
+      for(int i = 0; i < 12 - get_lenght(tickets); i++) cprintf(" ");
+
 
 
     cprintf("%d", p->priority_ratio);
