@@ -809,8 +809,8 @@ void
 print_all_procs()
 {
     struct proc *p;
-    cprintf("name       pid       state       queue       arrival_time        tickets     priority_ratio     rank       exec_cycle\n");
-    cprintf(".....................................................................................................................\n");
+    cprintf("name       pid       state       queue       arrival_time        tickets     p_ratio      e_ratio       a_ratio       rank       exec_cycle\n");
+    cprintf("...........................................................................................................................................\n");
     acquire(&ptable.lock);
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){ 
       if (p->state == UNUSED)
@@ -852,18 +852,17 @@ print_all_procs()
     cprintf("%d", p->entered_queue);
     for(int i = 0; i < 20 - get_lenght(p->entered_queue); i++) cprintf(" ");  
 
-    int tickets = p->tickets;
     cprintf("%d", p->tickets);
-    if(tickets < 0)
-      for(int i = 0; i < 12 - get_lenght(tickets*(-1)) - 1; i++) cprintf(" ");
-    else
-      for(int i = 0; i < 12 - get_lenght(tickets); i++) cprintf(" ");
-
-
+    for(int i = 0; i < 12 - get_lenght(p->tickets) - 1; i++) cprintf(" ");
 
     cprintf("%d", p->priority_ratio);
-    for(int i = 0; i < 19 - get_lenght(p->priority_ratio); i++) cprintf(" ");  
+    for(int i = 0; i < 13 - get_lenght(p->priority_ratio); i++) cprintf(" ");
 
+    cprintf("%d", p->executed_cycle_ratio);
+    for(int i = 0; i < 14 - get_lenght(p->executed_cycle_ratio); i++) cprintf(" ");
+
+    cprintf("%d", p->arrival_time_ratio);
+    for(int i = 0; i < 14 - get_lenght(p->arrival_time_ratio); i++) cprintf(" ");      
 
     printfloat(get_rank(p));
     for(int i = 0; i < 11 - get_lenght((int)get_rank(p))-2; i++) cprintf(" ");  
