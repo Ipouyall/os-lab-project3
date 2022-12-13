@@ -28,3 +28,4 @@
 #define SYS_set_lottery_params         27
 #define SYS_set_a_proc_bjf_params      28
 #define SYS_set_all_bjf_params         29
+#define SYS_print_all_procs            30

@@ -9,7 +9,7 @@
 
 #define STARVING_THRESHOLD 8000
 #define MIN_BJF_RANK 1000000
-#define DEFAULT_MAX_TICKETS 10
+#define DEFAULT_MAX_TICKETS 30
 
 struct {
   struct spinlock lock;
@@ -28,11 +28,11 @@ int
 generate_random_number(int min, int max)
 {
     if (min >= max)
-        return max;
-    int rand_num;
+        return max > 0 ? max : -1 * max;
     acquire(&tickslock);
-    rand_num = (ticks + 2) * (ticks + 1) * (2 * ticks + 3) * 1348 * (ticks % max);
+    int rand_num, diff = max - min + 1, time = ticks;
     release(&tickslock);
+    rand_num = (1 + (1 + ((time + 2) % diff ) * (time + 1) * 132) % diff) * (1 + time % max) * (1 + 2 * max % diff);
     rand_num = rand_num % (max - min + 1) + min;
     return rand_num;
 }
@@ -780,4 +780,101 @@ set_all_bjf_params(int priority_ratio, int arrival_time_ratio, int executed_cycl
         p->executed_cycle_ratio = executed_cycle_ratio;
     }
     release(&ptable.lock);
+}
+
+
+void
+printfloat(float num){
+  int beg=(int)(num);
+	int fin=(int)(num*100)-beg*100;
+  cprintf("%d", beg);
+  cprintf(".");
+	if(fin<10)
+    cprintf("0");
+	cprintf("%d", fin);
+}
+int 
+get_lenght(int num)
+{
+  int len = 0;
+  if(num == 0)
+    return 1;
+  while(num > 0){
+    num /= 10;
+    len++;
+  }
+  return len;
+}
+void 
+print_all_procs()
+{
+    struct proc *p;
+    cprintf("name       pid       state       queue       arrival_time        tickets     p_ratio      e_ratio       a_ratio       rank       exec_cycle\n");
+    cprintf("...........................................................................................................................................\n");
+    acquire(&ptable.lock);
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){ 
+      if (p->state == UNUSED)
+        continue;
+
+
+    cprintf(p->name);
+    for(int i = 0; i < 11 - strlen(p->name); i++) cprintf(" ");
+
+    cprintf("%d", p->pid);
+    for(int i = 0; i < 10 - get_lenght(p->pid); i++) cprintf(" ");  
+
+    char* state;
+    if (p->state == 0)
+      state="UNUSED";
+    else if (p->state == 1)
+      state="EMBRYO";
+    else if (p->state == 2)
+      state="SLEEPING";
+    else if (p->state == 3)
+      state="RUNNABLE";
+    else if (p->state == 4)
+      state="RUNNING";
+    else if (p->state == 5)
+      state="ZOMBIE";
+    cprintf(state);
+    for(int i = 0; i < 12 - strlen(state); i++) cprintf(" ");
+
+    char* queue;
+    if (p->queue == 1)
+      queue="RoundRobin";
+    else if (p->queue == 2)
+      queue="Lottery";
+    else if (p->queue == 3)
+      queue="BJF";
+    cprintf(queue);
+    for(int i = 0; i < 12 - strlen(queue); i++) cprintf(" ");  
+
+    cprintf("%d", p->entered_queue);
+    for(int i = 0; i < 20 - get_lenght(p->entered_queue); i++) cprintf(" ");  
+
+    cprintf("%d", p->tickets);
+    for(int i = 0; i < 12 - get_lenght(p->tickets) - 1; i++) cprintf(" ");
+
+    cprintf("%d", p->priority_ratio);
+    for(int i = 0; i < 13 - get_lenght(p->priority_ratio); i++) cprintf(" ");
+
+    cprintf("%d", p->executed_cycle_ratio);
+    for(int i = 0; i < 14 - get_lenght(p->executed_cycle_ratio); i++) cprintf(" ");
+
+    cprintf("%d", p->arrival_time_ratio);
+    for(int i = 0; i < 14 - get_lenght(p->arrival_time_ratio); i++) cprintf(" ");      
+
+    printfloat(get_rank(p));
+    for(int i = 0; i < 11 - get_lenght((int)get_rank(p))-2; i++) cprintf(" ");  
+
+    float executed_cycle = p->executed_cycle*10;
+    if(executed_cycle - (int)(executed_cycle) <= 0.5)
+      cprintf("%d", (int)(executed_cycle));
+    else
+      cprintf("%d", (int)(executed_cycle)+1);
+
+    cprintf("\n");
+  }
+  release(&ptable.lock);
+  
 }

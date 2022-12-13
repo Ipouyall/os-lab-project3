@@ -155,3 +155,9 @@ sys_set_all_bjf_params(void)
   argint(2, &executed_cycle_ratio);
   set_all_bjf_params(priority_ratio, arrival_time_ratio, executed_cycle_ratio);
 }
+
+void
+sys_print_all_procs(void)
+{
+  print_all_procs();
+}
